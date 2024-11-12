@@ -10,10 +10,21 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Pencil, Trash, Mail, MessageSquare } from "lucide-react";
+import {
+  Pencil,
+  Trash,
+  Mail,
+  MessageSquare,
+  Play,
+  Pause,
+  BarChart2,
+  Users,
+} from "lucide-react";
 import { format } from "date-fns";
 import { Campaign } from "@/lib/types";
 import CreateCampaignDialog from "./create-campaign-dialog";
+import CampaignTargetingDialog from "./campaign-targeting-dialog";
+import CampaignMetricsDialog from "./campaign-metrics-dialog";
 
 interface CampaignListProps {
   campaigns: Campaign[];
@@ -27,6 +38,51 @@ export default function CampaignList({
   onDeleteCampaign,
 }: CampaignListProps) {
   const [editCampaign, setEditCampaign] = useState<Campaign | undefined>();
+  const [targetingCampaign, setTargetingCampaign] = useState<Campaign | undefined>();
+  const [metricsCampaign, setMetricsCampaign] = useState<Campaign | undefined>();
+
+  const handleStatusToggle = (campaign: Campaign) => {
+    const newStatus = campaign.status === "active" ? "paused" : "active";
+    onUpdateCampaign({
+      ...campaign,
+      status: newStatus,
+      updatedAt: new Date().toISOString(),
+    });
+  };
+
+  const handleTargetingSave = (campaign: Campaign, targeting: Campaign['targeting']) => {
+    onUpdateCampaign({
+      ...campaign,
+      targeting,
+      updatedAt: new Date().toISOString(),
+    });
+  };
+
+  const getStatusColor = (status: Campaign['status']) => {
+    switch (status) {
+      case "active":
+        return "bg-green-500";
+      case "paused":
+        return "bg-yellow-500";
+      case "completed":
+        return "bg-blue-500";
+      default:
+        return "bg-gray-500";
+    }
+  };
+
+  const renderCampaignType = (type: "email" | "sms") => {
+    return (
+      <div className="flex items-center gap-1">
+        {type === "email" ? (
+          <Mail className="h-4 w-4" />
+        ) : (
+          <MessageSquare className="h-4 w-4" />
+        )}
+        <span>{type}</span>
+      </div>
+    );
+  };
 
   return (
     <>
@@ -40,14 +96,19 @@ export default function CampaignList({
                   Created {format(new Date(campaign.createdAt), "MMM d, yyyy")}
                 </CardDescription>
               </div>
-              <Badge variant="secondary">
-                {campaign.type === "email" ? (
-                  <Mail className="h-4 w-4 mr-1" />
-                ) : (
-                  <MessageSquare className="h-4 w-4 mr-1" />
-                )}
-                {campaign.type}
-              </Badge>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary">
+                    {renderCampaignType(campaign.type)}
+                  </Badge>
+                  <Badge
+                    variant="secondary"
+                    className={`${getStatusColor(campaign.status)} text-white`}
+                  >
+                    {campaign.status}
+                  </Badge>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -65,21 +126,52 @@ export default function CampaignList({
                     {campaign.content}
                   </div>
                 </div>
-                <div className="flex justify-end space-x-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setEditCampaign(campaign)}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onDeleteCampaign(campaign.id)}
-                  >
-                    <Trash className="h-4 w-4" />
-                  </Button>
+
+                <div className="flex items-center justify-between pt-4 border-t">
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setEditCampaign(campaign)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setTargetingCampaign(campaign)}
+                    >
+                      <Users className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setMetricsCampaign(campaign)}
+                    >
+                      <BarChart2 className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onDeleteCampaign(campaign.id)}
+                    >
+                      <Trash className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  {campaign.status !== "completed" && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleStatusToggle(campaign)}
+                    >
+                      {campaign.status === "active" ? (
+                        <Pause className="h-4 w-4 mr-2" />
+                      ) : (
+                        <Play className="h-4 w-4 mr-2" />
+                      )}
+                      {campaign.status === "active" ? "Pause" : "Activate"}
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -87,12 +179,31 @@ export default function CampaignList({
         ))}
       </div>
 
-      <CreateCampaignDialog
-        open={!!editCampaign}
-        onOpenChange={(open) => !open && setEditCampaign(undefined)}
-        onCreateCampaign={onUpdateCampaign}
-        editCampaign={editCampaign}
-      />
+      {editCampaign && (
+        <CreateCampaignDialog
+          open={!!editCampaign}
+          onOpenChange={(open) => !open && setEditCampaign(undefined)}
+          onCreateCampaign={onUpdateCampaign}
+          editCampaign={editCampaign}
+        />
+      )}
+
+      {targetingCampaign && (
+        <CampaignTargetingDialog
+          open={!!targetingCampaign}
+          onOpenChange={(open) => !open && setTargetingCampaign(undefined)}
+          campaign={targetingCampaign}
+          onSave={(targeting) => handleTargetingSave(targetingCampaign, targeting)}
+        />
+      )}
+
+      {metricsCampaign && (
+        <CampaignMetricsDialog
+          open={!!metricsCampaign}
+          onOpenChange={(open) => !open && setMetricsCampaign(undefined)}
+          campaign={metricsCampaign}
+        />
+      )}
     </>
   );
 }

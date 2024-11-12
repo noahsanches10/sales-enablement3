@@ -35,6 +35,7 @@ export default function CreateCampaignDialog({
       type: "email",
       subject: "",
       content: "",
+      status: "draft"
     }
   );
 
@@ -43,12 +44,24 @@ export default function CreateCampaignDialog({
     const newCampaign: Campaign = {
       id: editCampaign?.id || crypto.randomUUID(),
       ...formData,
+      status: editCampaign?.status || "draft",
       createdAt: editCampaign?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     } as Campaign;
 
     onCreateCampaign(newCampaign);
     onOpenChange(false);
+    
+    // Reset form if not editing
+    if (!editCampaign) {
+      setFormData({
+        name: "",
+        type: "email",
+        subject: "",
+        content: "",
+        status: "draft"
+      });
+    }
   };
 
   const insertVariable = (variable: string) => {

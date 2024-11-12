@@ -7,10 +7,12 @@ import { Campaign } from "@/lib/types";
 import { getCampaigns, saveCampaign, deleteCampaign } from "@/lib/storage";
 import CreateCampaignDialog from "@/components/create-campaign-dialog";
 import CampaignList from "@/components/campaign-list";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function CampaignsPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [activeTab, setActiveTab] = useState<Campaign['status']>("active");
 
   useEffect(() => {
     setCampaigns(getCampaigns());
@@ -22,9 +24,15 @@ export default function CampaignsPage() {
   };
 
   const handleDeleteCampaign = (campaignId: string) => {
-    deleteCampaign(campaignId);
-    setCampaigns(getCampaigns());
+    if (window.confirm("Are you sure you want to delete this campaign?")) {
+      deleteCampaign(campaignId);
+      setCampaigns(getCampaigns());
+    }
   };
+
+  const filteredCampaigns = campaigns.filter(
+    (campaign) => campaign.status === activeTab
+  );
 
   return (
     <div className="space-y-4">
@@ -36,11 +44,22 @@ export default function CampaignsPage() {
         </Button>
       </div>
 
-      <CampaignList
-        campaigns={campaigns}
-        onUpdateCampaign={handleCreateCampaign}
-        onDeleteCampaign={handleDeleteCampaign}
-      />
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as Campaign['status'])}>
+        <TabsList>
+          <TabsTrigger value="active">Active</TabsTrigger>
+          <TabsTrigger value="draft">Drafts</TabsTrigger>
+          <TabsTrigger value="paused">Paused</TabsTrigger>
+          <TabsTrigger value="completed">Completed</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value={activeTab}>
+          <CampaignList
+            campaigns={filteredCampaigns}
+            onUpdateCampaign={handleCreateCampaign}
+            onDeleteCampaign={handleDeleteCampaign}
+          />
+        </TabsContent>
+      </Tabs>
 
       <CreateCampaignDialog
         open={isCreateDialogOpen}

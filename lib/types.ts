@@ -66,6 +66,21 @@ export interface Lead {
   source?: LeadSource;
 }
 
+export interface CampaignTargeting {
+  stages: Stage[];
+  priorities: Priority[];
+  sources: LeadSource[];
+  includeCustomers: boolean;
+}
+
+export interface CampaignMetrics {
+  sent: number;
+  opened: number;
+  clicked: number;
+  converted: number;
+  lastSent?: string;
+}
+
 export interface Campaign {
   id: string;
   name: string;
@@ -74,6 +89,9 @@ export interface Campaign {
   content: string;
   createdAt: string;
   updatedAt: string;
+  status: "draft" | "active" | "completed" | "paused";
+  targeting?: CampaignTargeting;
+  metrics?: CampaignMetrics;
 }
 
 export const VARIABLE_TAGS = [
