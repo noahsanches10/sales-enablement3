@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/mode-toggle";
-import { KanbanSquare, MessageSquare, Users, BarChart } from "lucide-react";
+import { KanbanSquare, MessageSquare, Users, BarChart, Building2 } from "lucide-react";
 
 export function Navigation() {
   const pathname = usePathname();
@@ -34,6 +34,12 @@ export function Navigation() {
       label: "Analytics",
       icon: BarChart,
       active: pathname === "/analytics",
+    },
+    {
+      href: "/profile",
+      label: "Profile",
+      icon: Building2,
+      active: pathname === "/profile",
     },
   ];
 

@@ -32,21 +32,43 @@ export function calculateLeadScore(lead: Lead): ScoreBreakdown {
     negative: [] as string[],
   };
 
+  // Get business profile for scoring context
+  const businessProfile = localStorage.getItem("businessProfile");
+  const profile = businessProfile ? JSON.parse(businessProfile) : null;
+
   // Property Value Score (0-10)
   let propertyValueScore = 0;
   if (lead.projectedValue) {
-    if (lead.projectedValue >= 10000) {
-      propertyValueScore = 10;
-      factors.positive.push("High-value opportunity");
-    } else if (lead.projectedValue >= 5000) {
-      propertyValueScore = 8;
-      factors.positive.push("Good contract value");
-    } else if (lead.projectedValue >= 2500) {
-      propertyValueScore = 6;
-      factors.positive.push("Moderate contract value");
+    if (profile?.avgContractValue) {
+      const avgValue = parseFloat(profile.avgContractValue);
+      if (lead.projectedValue >= avgValue * 1.5) {
+        propertyValueScore = 10;
+        factors.positive.push("High-value opportunity (above average)");
+      } else if (lead.projectedValue >= avgValue) {
+        propertyValueScore = 8;
+        factors.positive.push("Above average contract value");
+      } else if (lead.projectedValue >= avgValue * 0.5) {
+        propertyValueScore = 6;
+        factors.positive.push("Moderate contract value");
+      } else {
+        propertyValueScore = 4;
+        factors.negative.push("Below average contract value");
+      }
     } else {
-      propertyValueScore = 4;
-      factors.negative.push("Low contract value");
+      // Fallback if no business profile
+      if (lead.projectedValue >= 10000) {
+        propertyValueScore = 10;
+        factors.positive.push("High-value opportunity");
+      } else if (lead.projectedValue >= 5000) {
+        propertyValueScore = 8;
+        factors.positive.push("Good contract value");
+      } else if (lead.projectedValue >= 2500) {
+        propertyValueScore = 6;
+        factors.positive.push("Moderate contract value");
+      } else {
+        propertyValueScore = 4;
+        factors.negative.push("Low contract value");
+      }
     }
   } else {
     factors.negative.push("No projected value set");
@@ -74,7 +96,7 @@ export function calculateLeadScore(lead: Lead): ScoreBreakdown {
   let timelineScore = 0;
   if (lead.followUpDate) {
     const followUp = new Date(lead.followUpDate);
-    const today = new Date();
+    const now = new Date();
     
     if (isWithinInterval(followUp, { 
       start: today, 
